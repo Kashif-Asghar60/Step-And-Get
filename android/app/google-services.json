@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "965548467469",
+    "project_id": "step-n-get-ed274",
+    "storage_bucket": "step-n-get-ed274.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:965548467469:android:b49e9e50bf4b1f0de97c44",
+        "android_client_info": {
+          "package_name": "com.example.step_n_get"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIKoRDgeZDuiwOhOrT7IZrCmXbKAYQ01Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
