@@ -4,6 +4,7 @@ import 'package:step_n_get/account/register.dart';
 import 'package:step_n_get/account/sign_in.dart';
 
 class Settings extends StatelessWidget {
+  //updated
   @override
   Widget build(BuildContext context) {
     return Scaffold(
