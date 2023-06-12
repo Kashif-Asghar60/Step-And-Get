@@ -50,19 +50,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDIKoRDgeZDuiwOhOrT7IZrCmXbKAYQ01Q',
-    appId: '1:965548467469:android:b49e9e50bf4b1f0de97c44',
-    messagingSenderId: '965548467469',
-    projectId: 'step-n-get-ed274',
-    storageBucket: 'step-n-get-ed274.appspot.com',
+    apiKey: 'AIzaSyDqfWo8kDPejdEG9sar9a-CrsiRbczqN4E',
+    appId: '1:280105861567:android:5789705bb470e38a25e10a',
+    messagingSenderId: '280105861567',
+    projectId: 'stepandget',
+    storageBucket: 'stepandget.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBYKpKbb_0B21gj34KwtqyUkjL7276thw4',
-    appId: '1:965548467469:ios:2c8ca45bd8eb0426e97c44',
-    messagingSenderId: '965548467469',
-    projectId: 'step-n-get-ed274',
-    storageBucket: 'step-n-get-ed274.appspot.com',
+    apiKey: 'AIzaSyBoJ_be71NqXGksjXNn4DKyco9Pvlosnfk',
+    appId: '1:280105861567:ios:14ee15fbb4f7d40925e10a',
+    messagingSenderId: '280105861567',
+    projectId: 'stepandget',
+    storageBucket: 'stepandget.appspot.com',
+    iosClientId: '280105861567-0l10eksu8145ha795u7rovuobgsh6502.apps.googleusercontent.com',
     iosBundleId: 'com.example.stepNGet',
   );
 }

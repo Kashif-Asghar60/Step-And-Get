@@ -1,5 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:step_n_get/account/verify_screen.dart';
+
+import '../screens/bottom_navBar.dart';
 
 class Register extends StatefulWidget {
   const Register({Key? key}) : super(key: key);
@@ -11,12 +15,19 @@ class Register extends StatefulWidget {
 class _RegisterState extends State<Register> {
   TextEditingController countryController = TextEditingController();
 
+  TextEditingController phoneController = TextEditingController();
+  TextEditingController otpController = TextEditingController();
+
+  FirebaseAuth auth = FirebaseAuth.instance;
+  bool otpVisibility = false;
+  User? user;
+  String verificationID = "";
   @override
-  void initState() {
+/*   void initState() {
     // TODO: implement initState
     countryController.text = "+233";
     super.initState();
-  }
+  } */
 
   @override
   Widget build(BuildContext context) {
@@ -58,41 +69,54 @@ class _RegisterState extends State<Register> {
                 decoration: BoxDecoration(
                     border: Border.all(width: 1, color: Colors.grey),
                     borderRadius: BorderRadius.circular(10)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 10,
+                child: TextField(
+                  controller: phoneController,
+                  decoration: InputDecoration(
+                    hintText: 'Phone Number',
+                    prefix: Padding(
+                      padding: EdgeInsets.all(4),
                     ),
-                    SizedBox(
-                      width: 40,
-                      child: TextField(
-                        controller: countryController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      "|",
-                      style: TextStyle(fontSize: 33, color: Colors.grey),
-                    ),
-                    SizedBox(
-                      width: 10,
-                    ),
-                    Expanded(
-                        child: TextField(
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        hintText: "Phone",
-                      ),
-                    ))
-                  ],
+                  ),
+                  maxLength: 15,
+                  keyboardType: TextInputType.phone,
                 ),
               ),
+              Visibility(
+                child: TextField(
+                  controller: otpController,
+                  decoration: InputDecoration(
+                    hintText: 'OTP',
+                    prefix: Padding(
+                      padding: EdgeInsets.all(4),
+                      child: Text(''),
+                    ),
+                  ),
+                  maxLength: 10,
+                  keyboardType: TextInputType.number,
+                ),
+                visible: otpVisibility,
+              ),
               SizedBox(
+                height: 10,
+              ),
+              MaterialButton(
+                color: Colors.indigo[900],
+                onPressed: () {
+                  if (otpVisibility) {
+                    verifyOTP();
+                  } else {
+                    loginWithPhone();
+                  }
+                },
+                child: Text(
+                  otpVisibility ? "Verify" : "Login",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+              /*    SizedBox(
                 height: 20,
               ),
               SizedBox(
@@ -107,17 +131,80 @@ class _RegisterState extends State<Register> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => VerifyScreen(),
+                          builder: (context) => BottomNavBar(),
                         ),
                       );
                       // Navigator.pushNamed(context, 'verify');
                     },
                     child: Text("Send the code")),
-              )
+              ) */
             ],
           ),
         ),
       ),
+    );
+  }
+
+  void loginWithPhone() async {
+    auth.verifyPhoneNumber(
+      phoneNumber: phoneController.text,
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        await auth.signInWithCredential(credential).then((value) {
+          print("You are logged in successfully");
+        });
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        print(e.message);
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        otpVisibility = true;
+        verificationID = verificationId;
+        setState(() {});
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {},
+    );
+  }
+
+  void verifyOTP() async {
+    PhoneAuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: verificationID, smsCode: otpController.text);
+
+    await auth.signInWithCredential(credential).then(
+      (value) {
+        setState(() {
+          user = FirebaseAuth.instance.currentUser;
+        });
+      },
+    ).whenComplete(
+      () {
+        if (user != null) {
+          Fluttertoast.showToast(
+            msg: "You are logged in successfully",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0,
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BottomNavBar(),
+            ),
+          );
+        } else {
+          Fluttertoast.showToast(
+            msg: "your login is failed",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0,
+          );
+        }
+      },
     );
   }
 }

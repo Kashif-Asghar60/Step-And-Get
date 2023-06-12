@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:step_n_get/account/register.dart';
 import 'package:step_n_get/account/sign_in.dart';
 import 'package:step_n_get/account/verify_screen.dart';
-import 'package:step_n_get/firebase/firebase_options.dart';
 import 'package:step_n_get/account/signup.dart';
 import 'package:step_n_get/screens/bottom_navBar.dart';
+
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,19 +30,16 @@ class MyApp extends StatelessWidget {
         'register': (context) => Register(),
         'verify': (context) => VerifyScreen()
       },
-      home: Register(),
-      // home: StreamBuilder(
-      //   stream: FirebaseAuth.instance.authStateChanges(),
-      //   builder: (context, snapshot){
-      //     if (snapshot.hasData){
-      //       return BottomNavBar();
-      //     }
-      //    else {
-      //     return SignInScreen();
-      //    }
-      //   }
-      //
-      //   ),
+      // home: Register(),
+      home: StreamBuilder(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return BottomNavBar();
+            } else {
+              return Register();
+            }
+          }),
     );
   }
 }
