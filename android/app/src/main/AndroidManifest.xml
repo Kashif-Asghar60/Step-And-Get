@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.step_n_get">
-   <application
+
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+
+    <application
         android:label="step_n_get"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
@@ -31,4 +34,6 @@
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
+
+
 </manifest>

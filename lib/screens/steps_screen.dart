@@ -6,10 +6,19 @@ class StepsScreen extends StatefulWidget {
 }
 
 class _StepsScreenState extends State<StepsScreen> {
-  final int targetSteps = 1000;
+  final TextEditingController _textEditingController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool isEditing = false;
+  int targetSteps = 1000;
   // Target number of steps
   final int currentSteps = 500;
   // Current number of steps
+  @override
+  void dispose() {
+    _textEditingController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -70,11 +79,42 @@ class _StepsScreenState extends State<StepsScreen> {
               ],
             ),
             SizedBox(height: 26),
-            Text(
-              'Target Steps: $targetSteps',
-              style: TextStyle(
-                fontSize: 18,
-              ),
+            Text('Daily Goal:'),
+            SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  ' $targetSteps',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  ' Steps',
+                  style: TextStyle(
+                    fontSize: 20,
+                  ),
+                ),
+                SizedBox(
+                  width: 8,
+                ),
+                GestureDetector(
+                  child: Icon(
+                    Icons.edit,
+                    color: Colors.blueAccent,
+                    size: 18,
+                  ),
+                  onTap: () {
+                    setState(() {
+                      isEditing = true;
+                      _textEditingController.text = targetSteps.toString();
+                    });
+                    showEditDialog();
+                  },
+                )
+              ],
             ),
             SizedBox(height: 46),
             Container(
@@ -89,6 +129,51 @@ class _StepsScreenState extends State<StepsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void showEditDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit Target Steps'),
+          content: Form(
+            key: _formKey,
+            child: TextFormField(
+              controller: _textEditingController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Enter Steps',
+              ),
+              validator: (value) {
+                if (value!.isEmpty) {
+                  return 'Please enter a value.';
+                }
+                final enteredSteps = int.tryParse(value);
+                if (enteredSteps != null && enteredSteps >= 1000) {
+                  return null; // Valid input
+                }
+                return 'Targeted steps must be more than 1000.';
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  setState(() {
+                    targetSteps = int.parse(_textEditingController.text);
+                    isEditing = false;
+                  });
+                  Navigator.pop(context);
+                }
+              },
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

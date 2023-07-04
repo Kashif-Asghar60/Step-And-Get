@@ -40,6 +40,9 @@ dependencies:
   firebase_auth: ^4.6.1
   cloud_firestore: ^4.7.1
   fluttertoast: ^8.2.2
+  pedometer: ^3.0.0
+  permission_handler: ^10.3.0
+  #google_mobile_ads: ^3.0.0
 
 #  pin_code_text_field: ^1.8.0
 #  shared_preferences: ^2.1.1

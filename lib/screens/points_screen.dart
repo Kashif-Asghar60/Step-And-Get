@@ -1,7 +1,41 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class PointsScreen extends StatelessWidget {
+class PointsScreen extends StatefulWidget {
+  @override
+  State<PointsScreen> createState() => _PointsScreenState();
+}
+
+class _PointsScreenState extends State<PointsScreen> {
+  int _points = 0;
+  //late RewardedAd _rewardedAd;
+  final adUnitId = Platform.isAndroid
+      ? 'ca-app-pub-3940256099942544/5224354917'
+      : 'ca-app-pub-3940256099942544/1712485313';
+  @override
+  void initState() {
+    //_createRewardedAd();
+    super.initState();
+  }
+
+  // void _createRewardedAd() {
+  //   RewardedAd.load(
+  //     adUnitId: adUnitId,
+  //     request: const AdRequest(),
+  //     rewardedAdLoadCallback: RewardedAdLoadCallback(
+  //       onAdLoaded: (ad) => setState(() => _rewardedAd = ad),
+  //       onAdFailedToLoad: (error) {
+  //         // setState(() {
+  //         //   _rewardedAd ??= null;
+  //         // });
+  //         print('Rewarded ad failed to load: $error');
+  //       },
+  //     ),
+  //   );
+  // }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,7 +66,7 @@ class PointsScreen extends StatelessWidget {
               ),
               SizedBox(width: 5),
               Text(
-                '100', // Replace with the actual points value
+                '$_points', // Replace with the actual points value
                 style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold),
               ),
             ],
@@ -69,21 +103,21 @@ class PointsScreen extends StatelessWidget {
               },
             ),
           ),
+          // ElevatedButton(
+          //   style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+          //   onPressed: () {
+          //     // Handle the action for watching an ad
+          //     // This is for Watch Ad x2 button
+          //   },
+          //   child: Text('x2 Daily Points - Watch Ad'),
+          // ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            onPressed: () {
-              // Handle the action for watching an ad
-              // This is for Watch Ad x2 button
-            },
-            child: Text('x2 Daily Points - Watch Ad'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.pinkAccent),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
             onPressed: () {
               // Handle the action for watching a rewarded ad
               // This is for Watch Rewarded Ad x3 button
             },
-            child: Text('x3 Daily Points - Watch Ad'),
+            child: Text('Get 20 Points - Watch Ad'),
           ),
         ],
       ),

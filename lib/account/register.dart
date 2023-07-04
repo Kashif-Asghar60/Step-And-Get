@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:step_n_get/account/verify_screen.dart';
 
 import '../screens/bottom_navBar.dart';
 
@@ -64,21 +63,24 @@ class _RegisterState extends State<Register> {
               SizedBox(
                 height: 30,
               ),
-              Container(
-                height: 55,
-                decoration: BoxDecoration(
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  height: 55,
+                  decoration: BoxDecoration(
                     border: Border.all(width: 1, color: Colors.grey),
-                    borderRadius: BorderRadius.circular(10)),
-                child: TextField(
-                  controller: phoneController,
-                  decoration: InputDecoration(
-                    hintText: 'Phone Number',
-                    prefix: Padding(
-                      padding: EdgeInsets.all(4),
-                    ),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  maxLength: 15,
-                  keyboardType: TextInputType.phone,
+                  child: TextField(
+                    controller: phoneController,
+                    decoration: InputDecoration(
+                      contentPadding: EdgeInsets.all(8),
+                      border: InputBorder.none,
+                      hintText: 'Phone Number',
+                      prefix: Text('+92'),
+                    ),
+                    keyboardType: TextInputType.phone,
+                  ),
                 ),
               ),
               Visibility(
@@ -91,7 +93,7 @@ class _RegisterState extends State<Register> {
                       child: Text(''),
                     ),
                   ),
-                  maxLength: 10,
+                  maxLength: 6,
                   keyboardType: TextInputType.number,
                 ),
                 visible: otpVisibility,
@@ -99,45 +101,36 @@ class _RegisterState extends State<Register> {
               SizedBox(
                 height: 10,
               ),
-              MaterialButton(
-                color: Colors.indigo[900],
-                onPressed: () {
-                  if (otpVisibility) {
-                    verifyOTP();
-                  } else {
-                    loginWithPhone();
-                  }
-                },
-                child: Text(
-                  otpVisibility ? "Verify" : "Login",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-              /*    SizedBox(
+              SizedBox(
                 height: 20,
               ),
               SizedBox(
                 width: double.infinity,
                 height: 45,
                 child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                        primary: Colors.blue.shade600,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10))),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BottomNavBar(),
-                        ),
-                      );
-                      // Navigator.pushNamed(context, 'verify');
-                    },
-                    child: Text("Send the code")),
-              ) */
+                  style: ElevatedButton.styleFrom(
+                      primary: Colors.blue.shade600,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10))),
+
+                  onPressed: () {
+                    if (otpVisibility) {
+                      verifyOTP();
+                    } else {
+                      loginWithPhone();
+                    }
+                  },
+                  // Navigator.pushNamed(context, 'verify');
+
+                  child: Text(
+                    otpVisibility ? "Verify" : "Send Verfication Code",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -147,7 +140,7 @@ class _RegisterState extends State<Register> {
 
   void loginWithPhone() async {
     auth.verifyPhoneNumber(
-      phoneNumber: phoneController.text,
+      phoneNumber: "+92" + phoneController.text,
       verificationCompleted: (PhoneAuthCredential credential) async {
         await auth.signInWithCredential(credential).then((value) {
           print("You are logged in successfully");
@@ -183,7 +176,7 @@ class _RegisterState extends State<Register> {
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.BOTTOM,
             timeInSecForIosWeb: 1,
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.blueAccent,
             textColor: Colors.white,
             fontSize: 16.0,
           );
