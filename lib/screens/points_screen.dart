@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class PointsScreen extends StatefulWidget {
   @override
@@ -10,31 +12,101 @@ class PointsScreen extends StatefulWidget {
 
 class _PointsScreenState extends State<PointsScreen> {
   int _points = 0;
-  //late RewardedAd _rewardedAd;
+  bool _isTimerRunning = false;
+  Timer? _timer;
+  int _timerDuration = 15 * 60; // 15 minutes in seconds
+
+  void _startTimer() {
+    const oneSec = Duration(seconds: 1);
+    setState(() {
+      _isTimerRunning = true;
+      _timer = Timer.periodic(oneSec, (timer) {
+        if (_timerDuration <= 0) {
+          timer.cancel();
+          _onTimerComplete();
+        } else {
+          setState(() {
+            _timerDuration--;
+          });
+        }
+      });
+    });
+  }
+
+  void _onTimerComplete() {
+    setState(() {
+      _isTimerRunning = false;
+      _timer?.cancel();
+      _timer = null;
+    });
+  }
+  //
+  // void _watchAds() {
+  //   setState(() {
+  //     _showRewardedAd();
+  //     _timerDuration = 15 * 60; // Reset the timer duration
+  //     _startTimer();
+  //   });
+  // }
+
+  RewardedAd? _rewardedAd;
   final adUnitId = Platform.isAndroid
       ? 'ca-app-pub-3940256099942544/5224354917'
       : 'ca-app-pub-3940256099942544/1712485313';
   @override
   void initState() {
-    //_createRewardedAd();
+    _createRewardedAd();
     super.initState();
   }
 
-  // void _createRewardedAd() {
-  //   RewardedAd.load(
-  //     adUnitId: adUnitId,
-  //     request: const AdRequest(),
-  //     rewardedAdLoadCallback: RewardedAdLoadCallback(
-  //       onAdLoaded: (ad) => setState(() => _rewardedAd = ad),
-  //       onAdFailedToLoad: (error) {
-  //         // setState(() {
-  //         //   _rewardedAd ??= null;
-  //         // });
-  //         print('Rewarded ad failed to load: $error');
-  //       },
-  //     ),
-  //   );
-  // }
+//create Ad
+  void _createRewardedAd() {
+    RewardedAd.load(
+      adUnitId: adUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) => setState(() => _rewardedAd = ad),
+        onAdFailedToLoad: (error) {
+          // setState(() {
+          //   _rewardedAd ??= null;
+          // });
+          print('Rewarded ad failed to load: $error');
+        },
+      ),
+    );
+  }
+
+  //shoew Ad
+  void _showRewardedAd() {
+    if (_rewardedAd != null) {
+      _rewardedAd!.fullScreenContentCallback =
+          FullScreenContentCallback(onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        _createRewardedAd();
+      }, onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        _createRewardedAd();
+      });
+      _rewardedAd!.show(
+        onUserEarnedReward: (ad, reward) => setState(() {
+          _points += 20;
+        }),
+      );
+      _rewardedAd = null;
+    }
+  }
+
+  String _formatDuration(int duration) {
+    final minutes = (duration ~/ 60).toString().padLeft(2, '0');
+    final seconds = (duration % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,22 +175,41 @@ class _PointsScreenState extends State<PointsScreen> {
               },
             ),
           ),
+
           // ElevatedButton(
-          //   style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+          //   style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
           //   onPressed: () {
-          //     // Handle the action for watching an ad
-          //     // This is for Watch Ad x2 button
+          //     //_points++;
+          //     _showRewardedAd();
+          //     // Handle the action for watching a rewarded ad
+          //     // This is for Watch Rewarded Ad x3 button
           //   },
-          //   child: Text('x2 Daily Points - Watch Ad'),
+          //   child: Text('Get 20 Points - Watch Ad'),
           // ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-            onPressed: () {
-              // Handle the action for watching a rewarded ad
-              // This is for Watch Rewarded Ad x3 button
-            },
-            child: Text('Get 20 Points - Watch Ad'),
-          ),
+          _isTimerRunning
+              ? ElevatedButton(
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(
+                            'Wait until Times complete ${_formatDuration(_timerDuration)}')));
+                  },
+                  child:
+                      Text('Next ad after: ${_formatDuration(_timerDuration)}'),
+                )
+              : ElevatedButton(
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                  onPressed: () {
+                    setState(() {
+                      _showRewardedAd();
+                      _timerDuration = 15 * 60; // Reset the timer duration
+                      _startTimer();
+                    });
+                  },
+                  child: Text('Get 20 Points - Watch Ad'),
+                ),
         ],
       ),
     );
