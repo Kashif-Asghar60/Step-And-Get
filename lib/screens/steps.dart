@@ -78,6 +78,7 @@ class _StepsState extends State<Steps> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pedometer example app'),
+        backgroundColor: Colors.red,
       ),
       body: Center(
         child: Column(
@@ -96,26 +97,26 @@ class _StepsState extends State<Steps> {
               thickness: 0,
               color: Colors.white,
             ),
-            Text(
-              'Pedestrian status:',
-              style: TextStyle(fontSize: 30),
-            ),
-            Icon(
-              _status == 'walking'
-                  ? Icons.directions_walk
-                  : _status == 'stopped'
-                      ? Icons.accessibility_new
-                      : Icons.error,
-              size: 100,
-            ),
-            Center(
-              child: Text(
-                _status,
-                style: _status == 'walking' || _status == 'stopped'
-                    ? TextStyle(fontSize: 30)
-                    : TextStyle(fontSize: 20, color: Colors.red),
-              ),
-            )
+            // Text(
+            //   'Pedestrian status:',
+            //   style: TextStyle(fontSize: 30),
+            // ),
+            // Icon(
+            //   _status == 'walking'
+            //       ? Icons.directions_walk
+            //       : _status == 'stopped'
+            //           ? Icons.accessibility_new
+            //           : Icons.error,
+            //   size: 100,
+            // ),
+            // Center(
+            //   child: Text(
+            //     _status,
+            //     style: _status == 'walking' || _status == 'stopped'
+            //         ? TextStyle(fontSize: 30)
+            //         : TextStyle(fontSize: 20, color: Colors.red),
+            //   ),
+            // )
           ],
         ),
       ),

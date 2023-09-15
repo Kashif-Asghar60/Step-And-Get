@@ -62,6 +62,7 @@ class _PointsScreenState extends State<PointsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.red,
         title: Text('Points Screen'),
       ),
       body: Center(

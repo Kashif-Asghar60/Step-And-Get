@@ -112,14 +112,14 @@ class _PointsScreenState extends State<PointsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.red,
         automaticallyImplyLeading: false,
         elevation: 1,
         title: Center(
           child: Text(
             'Points',
             style: TextStyle(
-              color: Colors.black,
+              color: Colors.white,
             ),
           ),
         ),
@@ -199,8 +199,7 @@ class _PointsScreenState extends State<PointsScreen> {
                       Text('Next ad after: ${_formatDuration(_timerDuration)}'),
                 )
               : ElevatedButton(
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                   onPressed: () {
                     setState(() {
                       _showRewardedAd();
@@ -208,7 +207,7 @@ class _PointsScreenState extends State<PointsScreen> {
                       _startTimer();
                     });
                   },
-                  child: Text('Get 20 Points - Watch Ad'),
+                  child: Text('Get 40 Points - Watch Ad'),
                 ),
         ],
       ),

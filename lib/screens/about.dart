@@ -5,20 +5,9 @@ class AboutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Colors.black,
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        elevation: 1,
+        backgroundColor: Colors.red,
         title: Text(
           'About',
-          style: TextStyle(color: Colors.black),
         ),
       ),
       body: Padding(
@@ -35,7 +24,7 @@ class AboutScreen extends StatelessWidget {
             ),
             SizedBox(height: 16),
             Text(
-              'StepNGet is a revolutionary app designed to motivate and reward individuals for leading an active lifestyle. Our mission is to encourage people to take steps towards a healthier and more fulfilling life while offering exciting incentives along the way.',
+              'StepNGet is a revolutionary app designed to motivate and reward individuals for leading an active lifestyle. Our mission is to encourage people to take steps towards a healthier and more fulfilling life, while offering exciting incentives along the way.',
               style: TextStyle(fontSize: 16),
             ),
             SizedBox(height: 16),

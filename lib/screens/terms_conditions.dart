@@ -7,20 +7,9 @@ class TermsConditions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: Colors.black,
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        elevation: 1,
+        backgroundColor: Colors.red,
         title: Text(
           'Terms & Conditions ',
-          style: TextStyle(color: Colors.black),
         ),
       ),
       body: Padding(

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
+import 'package:pedometer/pedometer.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:async';
 
 class StepsScreen extends StatefulWidget {
   @override
@@ -11,31 +15,106 @@ class _StepsScreenState extends State<StepsScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool isEditing = false;
   int targetSteps = 10000;
-  // Target number of steps
-  final int currentSteps = 5920;
-  // Current number of steps
+
+  final numberFormatter = NumberFormat('#,###');
+
+  late Stream<StepCount> _stepCountStream;
+  late Stream<PedestrianStatus> _pedestrianStatusStream;
+  String _status = '?', _steps = '0';
+
+  Timer? _resetStepsTimer;
+
   @override
   void dispose() {
     _textEditingController.dispose();
+    _resetStepsTimer?.cancel();
     super.dispose();
   }
 
   @override
+  void initState() {
+    super.initState();
+    initPlatformState();
+
+    _setupResetStepsTimer();
+  }
+
+  void _setupResetStepsTimer() {
+    final now = DateTime.now();
+    final midnight = DateTime(now.year, now.month, now.day + 1);
+    final timeUntilMidnight =
+        midnight.millisecondsSinceEpoch - now.millisecondsSinceEpoch;
+
+    _resetStepsTimer = Timer(Duration(milliseconds: timeUntilMidnight), () {
+      setState(() {
+        _steps = '0';
+      });
+      _setupResetStepsTimer();
+    });
+  }
+
+  void onStepCount(StepCount event) {
+    print(event);
+    setState(() {
+      _steps = event.steps.toString();
+    });
+  }
+
+  void onPedestrianStatusChanged(PedestrianStatus event) {
+    print(event);
+    setState(() {
+      _status = event.status;
+    });
+  }
+
+  void onPedestrianStatusError(error) {
+    print('onPedestrianStatusError: $error');
+    setState(() {
+      _status = 'Pedestrian Status not available';
+    });
+    print(_status);
+  }
+
+  void onStepCountError(error) {
+    print('onStepCountError: $error');
+    setState(() {
+      _steps = 'Step Count not available';
+    });
+  }
+
+  void initPlatformState() async {
+    PermissionStatus status = await Permission.activityRecognition.request();
+
+    if (status.isGranted) {
+      _pedestrianStatusStream = Pedometer.pedestrianStatusStream;
+      _pedestrianStatusStream
+          .listen(onPedestrianStatusChanged)
+          .onError(onPedestrianStatusError);
+
+      _stepCountStream = Pedometer.stepCountStream;
+      _stepCountStream.listen(onStepCount).onError(onStepCountError);
+    } else {
+      setState(() {
+        _status = 'Permission denied';
+        _steps = 'Permission denied';
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final numberFormatter = NumberFormat('#,###');
     final formattedTargetSteps = numberFormatter.format(targetSteps);
-    final formattedCurrentSteps = numberFormatter.format(currentSteps);
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.red,
         elevation: 1,
         automaticallyImplyLeading: false,
         title: Center(
           child: Text(
             'Step Tracker',
             style: TextStyle(
-              color: Colors.black,
+              color: Colors.white,
             ),
           ),
         ),
@@ -69,14 +148,14 @@ class _StepsScreenState extends State<StepsScreen> {
                     width: 220,
                     height: 220,
                     child: CircularProgressIndicator(
-                      backgroundColor: Colors.grey,
-                      value: currentSteps / targetSteps,
+                      backgroundColor: Colors.pinkAccent,
+                      value: int.parse(_steps) / targetSteps,
                       strokeWidth: 20,
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
                     ),
                   ),
                   Text(
-                    formattedCurrentSteps.toString(),
+                    _steps.toString(),
                     style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
@@ -115,7 +194,9 @@ class _StepsScreenState extends State<StepsScreen> {
                     onTap: () {
                       setState(() {
                         isEditing = true;
-                        _textEditingController.text = targetSteps.toString();
+                        final numericValue =
+                            numberFormatter.format(targetSteps);
+                        _textEditingController.text = numericValue;
                       });
                       showEditDialog();
                     },
@@ -150,6 +231,21 @@ class _StepsScreenState extends State<StepsScreen> {
             child: TextFormField(
               controller: _textEditingController,
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (value) {
+                final numericValue = value.replaceAll(',', '');
+                final formattedValue =
+                    numberFormatter.format(int.tryParse(numericValue) ?? 0);
+
+                if (_textEditingController.text != formattedValue) {
+                  _textEditingController.value =
+                      _textEditingController.value.copyWith(
+                    text: formattedValue,
+                    selection:
+                        TextSelection.collapsed(offset: formattedValue.length),
+                  );
+                }
+              },
               decoration: InputDecoration(
                 labelText: 'Enter Steps',
               ),
@@ -157,11 +253,13 @@ class _StepsScreenState extends State<StepsScreen> {
                 if (value!.isEmpty) {
                   return 'Please enter a value.';
                 }
-                final enteredSteps = int.tryParse(value);
-                if (enteredSteps != null && enteredSteps >= 10000) {
-                  return null; // Valid input
+                final enteredSteps = int.tryParse(value.replaceAll(',', ''));
+                if (enteredSteps != null &&
+                    enteredSteps >= 10000 &&
+                    enteredSteps <= 20000) {
+                  return null;
                 }
-                return 'Targeted steps must be more than 10,000.';
+                return 'Targeted steps must be\nbetween 10,000 and 20,000.';
               },
             ),
           ),
@@ -170,7 +268,9 @@ class _StepsScreenState extends State<StepsScreen> {
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   setState(() {
-                    targetSteps = int.parse(_textEditingController.text);
+                    final numericValue =
+                        _textEditingController.text.replaceAll(',', '');
+                    targetSteps = int.parse(numericValue);
                     isEditing = false;
                   });
                   Navigator.pop(context);

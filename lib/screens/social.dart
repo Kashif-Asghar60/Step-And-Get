@@ -24,7 +24,10 @@ class SocialScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Social'),
+        title: Text(
+          'Social',
+        ),
+        backgroundColor: Colors.red,
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),

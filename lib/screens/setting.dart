@@ -19,33 +19,19 @@ class Settings extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.red,
         elevation: 1,
         automaticallyImplyLeading: false,
         title: Center(
           child: Text(
             'Settings',
-            style: TextStyle(color: Colors.black),
+            style: TextStyle(color: Colors.white),
           ),
         ),
       ),
       body: ListView(
         padding: EdgeInsets.symmetric(vertical: 16.0),
         children: [
-          // ListTile(
-          //   leading: Icon(Icons.snowshoeing),
-          //   title: Text('Testing Steps'),
-          //   trailing: Icon(Icons.arrow_forward_ios),
-          //   onTap: () {
-          //     Navigator.push(
-          //       context,
-          //       MaterialPageRoute(
-          //         builder: (context) => Steps(),
-          //       ),
-          //     );
-          //   },
-          // ),
-
           ListTile(
             leading: Icon(Icons.person),
             title: Text('Profile'),

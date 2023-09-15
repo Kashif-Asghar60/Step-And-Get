@@ -6,14 +6,14 @@ class RedeemScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.red,
         elevation: 1,
         automaticallyImplyLeading: false,
         title: Center(
           child: Text(
             'Redeem',
             style: TextStyle(
-              color: Colors.black,
+              color: Colors.white,
             ),
           ),
         ),
