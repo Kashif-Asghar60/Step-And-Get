@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>280105861567-0l10eksu8145ha795u7rovuobgsh6502.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.280105861567-0l10eksu8145ha795u7rovuobgsh6502</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>280105861567-3j8lj2vlsu1k6do5hk5tluj05senbcs7.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBoJ_be71NqXGksjXNn4DKyco9Pvlosnfk</string>
+	<key>GCM_SENDER_ID</key>
+	<string>280105861567</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.stepNGet</string>
+	<key>PROJECT_ID</key>
+	<string>stepandget</string>
+	<key>STORAGE_BUCKET</key>
+	<string>stepandget.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:280105861567:ios:14ee15fbb4f7d40925e10a</string>
+	<key>DATABASE_URL</key>
+	<string>https://stepandget-default-rtdb.firebaseio.com</string>
+</dict>
+</plist>

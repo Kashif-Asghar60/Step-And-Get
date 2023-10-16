@@ -1,8 +1,18 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:provider/provider.dart';
 
+import '../provider/userauth.dart';
 import '../screens/bottom_navBar.dart';
+
+enum VerificationState {
+  initial,
+  sendingCode,
+  verifyingCode,
+  verified,
+}
 
 class Register extends StatefulWidget {
   const Register({Key? key}) : super(key: key);
@@ -12,21 +22,25 @@ class Register extends StatefulWidget {
 }
 
 class _RegisterState extends State<Register> {
+  VerificationState _verificationState = VerificationState.initial;
+  bool _isMounted = true;
+
   TextEditingController countryController = TextEditingController();
 
-  TextEditingController phoneController = TextEditingController();
+  TextEditingController phoneController =
+      TextEditingController(text: "3558389477");
   TextEditingController otpController = TextEditingController();
 
   FirebaseAuth auth = FirebaseAuth.instance;
   bool otpVisibility = false;
   User? user;
   String verificationID = "";
+
   @override
-/*   void initState() {
-    // TODO: implement initState
-    countryController.text = "+233";
-    super.initState();
-  } */
+  void dispose() {
+    _isMounted = false;
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,31 +52,24 @@ class _RegisterState extends State<Register> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset(
-                'assets/logo.png',
-                width: 200,
-                height: 200,
-              ),
-              SizedBox(
-                height: 25,
-              ),
+              if (_verificationState != VerificationState.verified)
+                Image.asset(
+                  'assets/logo.png',
+                  width: 200,
+                  height: 200,
+                ),
+              SizedBox(height: 25),
               Text(
                 "Phone Verification",
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
-              SizedBox(
-                height: 10,
-              ),
+              SizedBox(height: 10),
               Text(
                 "We need to register your phone to get stepping!",
-                style: TextStyle(
-                  fontSize: 16,
-                ),
+                style: TextStyle(fontSize: 16),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(
-                height: 30,
-              ),
+              SizedBox(height: 30),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Container(
@@ -98,9 +105,7 @@ class _RegisterState extends State<Register> {
                 ),
                 visible: otpVisibility,
               ),
-              SizedBox(
-                height: 10,
-              ),
+              SizedBox(height: 10),
               SizedBox(
                 height: 20,
               ),
@@ -109,10 +114,11 @@ class _RegisterState extends State<Register> {
                 height: 45,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                      primary: Colors.blue.shade600,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10))),
-
+                    primary: Colors.blue.shade600,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                   onPressed: () {
                     if (otpVisibility) {
                       verifyOTP();
@@ -120,10 +126,8 @@ class _RegisterState extends State<Register> {
                       loginWithPhone();
                     }
                   },
-                  // Navigator.pushNamed(context, 'verify');
-
                   child: Text(
-                    otpVisibility ? "Verify" : "Send Verfication Code",
+                    otpVisibility ? "Verify" : "Send Verification Code",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -131,6 +135,27 @@ class _RegisterState extends State<Register> {
                   ),
                 ),
               ),
+              if (_verificationState != VerificationState.verified)
+                SizedBox(
+                  height: 16.0,
+                ),
+              if (_verificationState != VerificationState.verified)
+                Text(
+                  _verificationState == VerificationState.sendingCode
+                      ? "Sending Verification Code..."
+                      : _verificationState == VerificationState.verifyingCode
+                          ? "Verifying OTP..."
+                          : "",
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    color: Colors.black,
+                  ),
+                ),
+/*               if (_verificationState != VerificationState.verified)
+                CircularProgressIndicator(
+                  color: Colors.blue,
+                  strokeWidth: 5.0,
+                ), */
             ],
           ),
         ),
@@ -139,65 +164,218 @@ class _RegisterState extends State<Register> {
   }
 
   void loginWithPhone() async {
-    auth.verifyPhoneNumber(
-      phoneNumber: "+92" + phoneController.text,
-      verificationCompleted: (PhoneAuthCredential credential) async {
-        await auth.signInWithCredential(credential).then((value) {
-          print("You are logged in successfully");
-        });
-      },
-      verificationFailed: (FirebaseAuthException e) {
-        print(e.message);
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        otpVisibility = true;
-        verificationID = verificationId;
-        setState(() {});
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {},
-    );
+    if (!_isMounted) return;
+
+    setState(() {
+      _verificationState = VerificationState.sendingCode;
+    });
+    String phoneNumber = "+92" + phoneController.text;
+
+    bool userExists = await checkIfUserExists(phoneNumber);
+
+    if (userExists) {
+      auth.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          await auth.signInWithCredential(credential).then((value) async {
+            print("You are logged in successfully");
+          });
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          print("Verification failed: ${e.message}");
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          print("Code sent: $verificationId");
+          otpVisibility = true;
+          verificationID = verificationId;
+          if (_isMounted) {
+            setState(() {
+              _verificationState = VerificationState.initial;
+            });
+          }
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          print("Auto retrieval timeout: $verificationId");
+        },
+      );
+    } else {
+      auth.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          await auth.signInWithCredential(credential).then(
+            (value) async {
+              setState(() {
+                user = FirebaseAuth.instance.currentUser;
+              });
+
+              if (user != null) {
+                context.read<UserProvider>().setUserId(user!.uid);
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user!.uid)
+                    .set({
+                  'phone': user!.phoneNumber,
+                  'createdAt': FieldValue.serverTimestamp(),
+                });
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user!.uid)
+                    .collection('points')
+                    .doc('totalpoints')
+                    .set({
+                  'points': 30,
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
+
+                print("You are logged in successfully");
+
+                if (_isMounted) {
+                  setState(() {
+                    _verificationState = VerificationState.initial;
+                  });
+                }
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BottomNavBar(),
+                  ),
+                );
+              } else {
+                print("Your login has failed");
+                if (_isMounted) {
+                  setState(() {
+                    _verificationState = VerificationState.initial;
+                  });
+                }
+                Fluttertoast.showToast(
+                  msg: "Your login has failed",
+                  toastLength: Toast.LENGTH_SHORT,
+                  gravity: ToastGravity.BOTTOM,
+                  timeInSecForIosWeb: 1,
+                  backgroundColor: Colors.red,
+                  textColor: Colors.white,
+                  fontSize: 16.0,
+                );
+              }
+            },
+          );
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          showErrorMessage(
+              "Error during OTP verification: $e"); // Show error message
+          if (_isMounted) {
+            setState(() {
+              _verificationState = VerificationState.initial;
+            });
+          }
+
+          print("Verification failed: ${e.message}");
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          print("Code sent: $verificationId");
+          otpVisibility = true;
+          verificationID = verificationId;
+          setState(() {});
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          print("Auto retrieval timeout: $verificationId");
+        },
+      );
+    }
+  }
+
+  Future<bool> checkIfUserExists(String phoneNumber) async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('phone', isEqualTo: phoneNumber)
+        .limit(1)
+        .get();
+
+    return querySnapshot.docs.isNotEmpty;
   }
 
   void verifyOTP() async {
-    PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: verificationID, smsCode: otpController.text);
+    if (!_isMounted) return;
 
-    await auth.signInWithCredential(credential).then(
-      (value) {
-        setState(() {
-          user = FirebaseAuth.instance.currentUser;
+    setState(() {
+      _verificationState = VerificationState.verifyingCode;
+    });
+
+    PhoneAuthCredential credential = PhoneAuthProvider.credential(
+      verificationId: verificationID,
+      smsCode: otpController.text,
+    );
+
+    try {
+      final UserCredential authResult =
+          await auth.signInWithCredential(credential);
+      final User? user = authResult.user;
+
+      if (user != null) {
+        context.read<UserProvider>().setUserId(user.uid);
+
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'phone': user.phoneNumber,
+          'createdAt': FieldValue.serverTimestamp(),
+          'byotp': "mmmmmm",
         });
-      },
-    ).whenComplete(
-      () {
-        if (user != null) {
-          Fluttertoast.showToast(
-            msg: "You are logged in successfully",
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 1,
-            backgroundColor: Colors.blueAccent,
-            textColor: Colors.white,
-            fontSize: 16.0,
-          );
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => BottomNavBar(),
-            ),
-          );
-        } else {
-          Fluttertoast.showToast(
-            msg: "your login is failed",
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 1,
-            backgroundColor: Colors.red,
-            textColor: Colors.white,
-            fontSize: 16.0,
-          );
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('points')
+            .doc('totalpoints')
+            .set({
+          'points': 40,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        print("You are logged in successfully");
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BottomNavBar(),
+          ),
+        );
+      } else {
+        if (_isMounted) {
+          setState(() {
+            _verificationState = VerificationState.initial;
+          });
         }
-      },
+        print("Your login has failed");
+
+        Fluttertoast.showToast(
+          msg: "Your login has failed",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+      }
+    } catch (e) {
+      print("Error during OTP verification: $e");
+      showErrorMessage(
+          "Error during OTP verification: $e"); // Show error message
+
+      if (_isMounted) {
+        setState(() {
+          _verificationState = VerificationState.initial;
+        });
+      }
+    }
+  }
+
+  // Method to show an error message using a SnackBar
+  void showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 15), // Adjust the duration as needed
+      ),
     );
   }
 }

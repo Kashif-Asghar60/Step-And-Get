@@ -2,9 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:step_n_get/screens/bottom_navBar.dart';
+import 'package:provider/provider.dart';
+
+import '../provider/pointsprovider.dart';
 
 class ProfileData extends StatefulWidget {
   @override
@@ -20,16 +21,42 @@ class _ProfileDataState extends State<ProfileData> {
   final TextEditingController _secondNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+
+  bool _editMode = false;
 
   @override
-  void dispose() {
-    _phoneController.dispose();
-    _passwordController.dispose();
-    _firstNameController.dispose();
-    _secondNameController.dispose();
-    _emailController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _fetchAndPopulateProfileData();
+  }
+
+  Future<void> _fetchAndPopulateProfileData() async {
+    try {
+      String uid = _auth.currentUser!.uid;
+      DocumentSnapshot<Map<String, dynamic>> profileSnapshot =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .collection('profile')
+              .doc(uid)
+              .get();
+
+      if (profileSnapshot.exists) {
+        Map<String, dynamic> profileData = profileSnapshot.data()!;
+        _firstNameController.text = profileData['firstName'] ?? '';
+        _secondNameController.text = profileData['lastName'] ?? '';
+        _emailController.text = profileData['email'] ?? '';
+        _phoneController.text = profileData['phone'] ?? '';
+        String? dateOfBirthString = profileData['dateOfBirth'];
+        if (dateOfBirthString != null && dateOfBirthString.isNotEmpty) {
+          setState(() {
+            selectedDate = DateTime.parse(dateOfBirthString);
+          });
+        }
+      }
+    } catch (error) {
+      print('Error fetching profile data: $error');
+    }
   }
 
   @override
@@ -54,159 +81,150 @@ class _ProfileDataState extends State<ProfileData> {
               ),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _firstNameController,
-                        decoration: InputDecoration(
-                          labelText: 'First Name',
-                          labelStyle: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 16,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.blue),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Please Enter First Name";
-                          } else {
-                            return null;
-                          }
-                        },
-                      ),
-                      SizedBox(height: 20),
-                      TextFormField(
-                        controller: _secondNameController,
-                        decoration: InputDecoration(
-                          labelText: 'Last Name',
-                          labelStyle: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 16,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.blue),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Please Enter Last Name";
-                          } else {
-                            return null;
-                          }
-                        },
-                      ),
-                      SizedBox(height: 20),
-                      TextFormField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        decoration: InputDecoration(
-                          labelText: 'Phone Number',
-                          labelStyle: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 16,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.blue),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Please enter a phone number";
-                          } else if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
-                            return "Please enter a valid phone number";
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 20),
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          labelText: 'Email ( Optional ) Get extra 10 points ',
-                          labelStyle: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 16,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.blue),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      GestureDetector(
-                        onTap: () => _selectDate(context),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 10),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  selectedDate != null
-                                      ? DateFormat.yMMMd().format(selectedDate!)
-                                      : 'Date of Birth',
-                                  style: TextStyle(
-                                    color: selectedDate != null
-                                        ? Colors.black
-                                        : Colors.grey[400],
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                              Icon(
-                                Icons.calendar_today,
-                                color: Colors.grey[400],
-                              ),
-                              SizedBox(width: 10),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 40),
-                      Container(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _uploadData,
-                          child: Text(
-                            'Save',
-                            style: TextStyle(fontSize: 18),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            primary: Colors.orange,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                child: _editMode ? _buildEditMode() : _buildViewMode(),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildViewMode() {
+    return Column(
+      children: [
+        // Display the profile data
+        TextFormField(
+          readOnly: true,
+          controller: _firstNameController,
+          decoration: InputDecoration(
+            labelText: 'First Name',
+          ),
+        ),
+        TextFormField(
+          readOnly: true,
+          controller: _secondNameController,
+          decoration: InputDecoration(
+            labelText: 'Last Name',
+          ),
+        ),
+        TextFormField(
+          readOnly: true,
+          controller: _emailController,
+          decoration: InputDecoration(
+            labelText: 'Email',
+          ),
+        ),
+        TextFormField(
+          readOnly: true,
+          controller: _phoneController,
+          decoration: InputDecoration(
+            labelText: 'Phone Number',
+          ),
+        ),
+        if (selectedDate != null)
+          Text(
+            'Date of Birth: ${DateFormat.yMMMd().format(selectedDate!)}',
+          ),
+        ElevatedButton(
+          onPressed: () {
+            setState(() {
+              _editMode = true;
+            });
+          },
+          child: Text('Update Profile'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditMode() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          TextFormField(
+            controller: _firstNameController,
+            decoration: InputDecoration(
+              labelText: 'First Name',
+            ),
+            validator: (value) {
+              if (value!.isEmpty) {
+                return "Please Enter First Name";
+              } else {
+                return null;
+              }
+            },
+          ),
+          TextFormField(
+            controller: _secondNameController,
+            decoration: InputDecoration(
+              labelText: 'Last Name',
+            ),
+            validator: (value) {
+              if (value!.isEmpty) {
+                return "Please Enter Last Name";
+              } else {
+                return null;
+              }
+            },
+          ),
+          TextFormField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            decoration: InputDecoration(
+              labelText: 'Phone Number',
+            ),
+            validator: (value) {
+              if (value!.isEmpty) {
+                return "Please enter a phone number";
+              } else if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
+                return "Please enter a valid phone number";
+              }
+              return null;
+            },
+          ),
+          TextFormField(
+            controller: _emailController,
+            decoration: InputDecoration(
+              labelText: 'Email ( Optional ) Get extra 10 points ',
+            ),
+          ),
+          GestureDetector(
+            onTap: () => _selectDate(context),
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 10,
+              ),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      selectedDate != null
+                          ? DateFormat.yMMMd().format(selectedDate!)
+                          : 'Date of Birth',
+                    ),
+                  ),
+                  Icon(
+                    Icons.calendar_today,
+                  ),
+                  SizedBox(width: 10),
+                ],
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              _uploadData();
+            },
+            child: Text('Save'),
+          ),
+        ],
       ),
     );
   }
@@ -225,7 +243,6 @@ class _ProfileDataState extends State<ProfileData> {
 
       if (now.month < picked.month ||
           (now.month == picked.month && now.day < picked.day)) {
-        // Subtract 1 from the age if the current date is before the birthdate in the current year
         age--;
       }
 
@@ -255,39 +272,66 @@ class _ProfileDataState extends State<ProfileData> {
     }
   }
 
-  ///signup
-
   Future<void> _uploadData() async {
     String uid = _auth.currentUser!.uid;
     if (_formKey.currentState!.validate()) {
-      // Save user data to Firestore
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      String? email = _emailController.text.trim().isEmpty
+          ? null
+          : _emailController.text.trim();
+      String? phone = _phoneController.text.trim().isEmpty
+          ? null
+          : _phoneController.text.trim();
+
+      Map<String, dynamic> updatedData = {
         'firstName': _firstNameController.text.trim(),
         'lastName': _secondNameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'dateOfBirth':
-            selectedDate.toString(), // Convert date to string format if needed
-      }).then((_) {
-        // Data uploaded successfully
+        'dateOfBirth': selectedDate.toString(),
+      };
+
+      if (email != null) {
+        updatedData['email'] = email;
+      }
+      if (phone != null) {
+        updatedData['phone'] = phone;
+      }
+
+      DocumentReference profileDocRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('profile')
+          .doc(uid);
+
+      bool profileDocExists = (await profileDocRef.get()).exists;
+
+      await profileDocRef
+          .set(updatedData, SetOptions(merge: true))
+          .then((_) async {
+        if (email != null && !profileDocExists) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .collection('points')
+              .add({
+            'emailBonusPoints': 10,
+            'timestamp': FieldValue.serverTimestamp(),
+          });
+        }
+        await context.read<PointsProvider>().updatePoints(uid, 10);
         Fluttertoast.showToast(
-          msg: "Data uploaded successfully",
+          msg: "Data updated successfully",
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.BOTTOM,
           timeInSecForIosWeb: 1,
-          backgroundColor: Colors.red,
+          backgroundColor: Colors.green,
           textColor: Colors.white,
           fontSize: 16.0,
         );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BottomNavBar(),
-          ),
-        );
+        setState(() {
+          _editMode = false;
+        });
       }).catchError((error) {
-        // Error uploading data
         Fluttertoast.showToast(
-          msg: "Error uploading data",
+          msg: "Error updating data",
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.BOTTOM,
           timeInSecForIosWeb: 1,
@@ -296,6 +340,16 @@ class _ProfileDataState extends State<ProfileData> {
           fontSize: 16.0,
         );
       });
+    } else {
+      Fluttertoast.showToast(
+        msg: "Please fill in all required fields",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
     }
   }
 }

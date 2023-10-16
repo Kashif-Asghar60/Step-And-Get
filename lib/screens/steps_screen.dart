@@ -3,18 +3,25 @@ import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import 'dart:async';
+import 'package:background_fetch/background_fetch.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../provider/pointsprovider.dart';
+import '../provider/userauth.dart';
 
 class StepsScreen extends StatefulWidget {
   @override
   State<StepsScreen> createState() => _StepsScreenState();
 }
 
-class _StepsScreenState extends State<StepsScreen> {
+class _StepsScreenState extends State<StepsScreen> with WidgetsBindingObserver {
   final TextEditingController _textEditingController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool isEditing = false;
   int targetSteps = 10000;
+  bool isTracking = false;
 
   final numberFormatter = NumberFormat('#,###');
 
@@ -24,19 +31,76 @@ class _StepsScreenState extends State<StepsScreen> {
 
   Timer? _resetStepsTimer;
 
+  StreamSubscription<StepCount>? _stepCountSubscription;
+  StreamSubscription<PedestrianStatus>? _pedestrianStatusSubscription;
+
   @override
   void dispose() {
     _textEditingController.dispose();
     _resetStepsTimer?.cancel();
+    WidgetsBinding.instance!.removeObserver(this); // Remove lifecycle observer
     super.dispose();
   }
 
   @override
   void initState() {
     super.initState();
-    initPlatformState();
 
     _setupResetStepsTimer();
+
+    // Retrieve the tracking state from SharedPreferences
+    SharedPreferences.getInstance().then((prefs) {
+      bool savedTrackingState = prefs.getBool('isTracking') ?? false;
+      // Retrieve the target steps from SharedPreferences and initialize _steps
+      targetSteps = prefs.getInt('targetSteps') ?? 10000;
+      _updateStepsFromSharedPrefs(prefs);
+      setState(() {
+        isTracking = savedTrackingState;
+      });
+
+      // Retrieve and set the step count from SharedPreferences
+      int savedSteps = prefs.getInt('steps') ?? 0;
+      setState(() {
+        _steps = savedSteps.toString();
+      });
+
+      // Only update the UI when the tracking state is retrieved
+      _updateUIFromTrackingState();
+    });
+
+    // Add an app lifecycle state observer
+    WidgetsBinding.instance!.addObserver(this);
+  }
+
+  void _updateStepsFromSharedPrefs(SharedPreferences prefs) {
+    int savedSteps = prefs.getInt('steps') ?? 0;
+    setState(() {
+      _steps = savedSteps.toString();
+    });
+  }
+
+  void _updateUIFromTrackingState() {
+    if (isTracking) {
+      // If tracking is active, set the UI to "Stop Tracking"
+      setState(() {});
+    } else {
+      // If tracking is not active, set the UI to "Start Tracking"
+      setState(() {});
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // App has resumed from the background
+      SharedPreferences.getInstance().then((prefs) {
+        bool savedTrackingState = prefs.getBool('isTracking') ?? false;
+        setState(() {
+          isTracking = savedTrackingState;
+          _updateUIFromTrackingState(); // Update the UI
+        });
+      });
+    }
   }
 
   void _setupResetStepsTimer() {
@@ -53,18 +117,55 @@ class _StepsScreenState extends State<StepsScreen> {
     });
   }
 
+  bool pointsAddedToday = false;
+
   void onStepCount(StepCount event) {
-    print(event);
-    setState(() {
-      _steps = event.steps.toString();
-    });
+    if (mounted) {
+      print("single step $event");
+
+      // Check if the widget is still mounted before calling setState
+      setState(() {
+        _steps = event.steps.toString();
+      });
+
+      // Save the step count to SharedPreferences
+      saveStepCountToSharedPreferences(int.parse(_steps));
+
+      // Check if points have already been added today
+      if (pointsAddedToday) {
+        return; // Points have already been added, no need to continue
+      }
+
+      // Check if the current steps are greater than or equal to the target steps
+      if (int.parse(_steps) >= targetSteps) {
+        // Add 30 points to the user's total points
+        final userId = context.read<UserProvider>().userId;
+        if (userId != null) {
+          context
+              .read<PointsProvider>()
+              .updatePoints(userId, 70); // Adjust the points as needed
+          print("Adding 70 points.");
+          pointsAddedToday =
+              true; // Set the flag to prevent multiple additions in a day
+        }
+      }
+    }
+  }
+
+// Function to save the step count to SharedPreferences
+  void saveStepCountToSharedPreferences(int steps) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setInt('steps', steps);
   }
 
   void onPedestrianStatusChanged(PedestrianStatus event) {
-    print(event);
-    setState(() {
-      _status = event.status;
-    });
+    if (mounted) {
+      // Check if the widget is still mounted before calling setState
+      print("stpppp $event");
+      setState(() {
+        _status = event.status;
+      });
+    }
   }
 
   void onPedestrianStatusError(error) {
@@ -82,6 +183,7 @@ class _StepsScreenState extends State<StepsScreen> {
     });
   }
 
+/* 
   void initPlatformState() async {
     PermissionStatus status = await Permission.activityRecognition.request();
 
@@ -100,7 +202,7 @@ class _StepsScreenState extends State<StepsScreen> {
       });
     }
   }
-
+ */
   @override
   Widget build(BuildContext context) {
     final formattedTargetSteps = numberFormatter.format(targetSteps);
@@ -204,6 +306,21 @@ class _StepsScreenState extends State<StepsScreen> {
                 ],
               ),
               SizedBox(height: 46),
+              ElevatedButton(
+                onPressed: () {
+                  toggleTracking();
+                },
+                child: Text(
+                  isTracking ? 'Stop Tracking' : 'Start Tracking',
+                  style: TextStyle(fontSize: 18),
+                ),
+                style: ElevatedButton.styleFrom(
+                  primary: isTracking ? Colors.red : Colors.green,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
               Container(
                 decoration: BoxDecoration(
                     shape: BoxShape.rectangle,
@@ -282,5 +399,90 @@ class _StepsScreenState extends State<StepsScreen> {
         );
       },
     );
+  }
+
+  void toggleTracking() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    if (isTracking) {
+      // Stop tracking
+      BackgroundFetch.stop().then((status) {
+        print('[BackgroundFetch] Stopped with status: $status');
+        setState(() {
+          isTracking = false; // Update the tracking state immediately
+        });
+
+        // Save the tracking state to SharedPreferences
+        prefs.setBool('isTracking', isTracking);
+
+        // Cancel the step count subscription
+        _stepCountSubscription?.cancel();
+        _stepCountSubscription = null; // Set it to null when canceled
+
+        // Cancel the pedestrian status subscription
+        _pedestrianStatusSubscription?.cancel();
+        _pedestrianStatusSubscription = null; // Set it to null when canceled
+      });
+    } else {
+      // Start tracking
+      initPlatformState(); // Call initPlatformState to set up _stepCountStream
+      BackgroundFetch.configure(
+        BackgroundFetchConfig(
+          minimumFetchInterval: 15,
+          stopOnTerminate: false,
+          enableHeadless: true,
+        ),
+        (String taskId) async {
+          print("[BackgroundFetch] Headless event received: $taskId");
+
+          BackgroundFetch.finish(taskId);
+        },
+      ).then((status) {
+        print('[BackgroundFetch] Started with status: $status');
+        setState(() {
+          isTracking = true; // Update the tracking state immediately
+        });
+
+        // Save the tracking state to SharedPreferences
+        prefs.setBool('isTracking', isTracking);
+      });
+    }
+
+    // Only update the UI when the tracking state changes
+    _updateUIFromTrackingState();
+  }
+
+  void initPlatformState() async {
+    PermissionStatus status = await Permission.activityRecognition.request();
+
+    if (status.isGranted) {
+      // Initialize _stepCountStream only when starting tracking
+      _stepCountStream = Pedometer.stepCountStream;
+
+      _stepCountSubscription = _stepCountStream.listen((StepCount event) {
+        if (isTracking) {
+          onStepCount(event);
+        }
+      });
+
+      _stepCountSubscription!.onError(onStepCountError);
+
+      // Initialize _pedestrianStatusStream only when starting tracking
+      _pedestrianStatusStream = Pedometer.pedestrianStatusStream;
+
+      _pedestrianStatusSubscription =
+          _pedestrianStatusStream.listen((PedestrianStatus event) {
+        if (isTracking) {
+          onPedestrianStatusChanged(event);
+        }
+      });
+
+      _pedestrianStatusSubscription!.onError(onPedestrianStatusError);
+    } else {
+      setState(() {
+        _status = 'Permission denied';
+        _steps = 'Permission denied';
+      });
+    }
   }
 }

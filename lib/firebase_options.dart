@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -28,10 +25,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -49,11 +43,23 @@ class DefaultFirebaseOptions {
     }
   }
 
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyB87228g90hrMKQHuISj5DlKrSoTfag6pY',
+    appId: '1:280105861567:web:5e17b9b35b3382cc25e10a',
+    messagingSenderId: '280105861567',
+    projectId: 'stepandget',
+    authDomain: 'stepandget.firebaseapp.com',
+    databaseURL: 'https://stepandget-default-rtdb.firebaseio.com',
+    storageBucket: 'stepandget.appspot.com',
+    measurementId: 'G-6PWCKYGK4J',
+  );
+
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDqfWo8kDPejdEG9sar9a-CrsiRbczqN4E',
+    apiKey: 'AIzaSyAnfZdB2NfwkjG7VSfdHaoapsHme7hnxcI',
     appId: '1:280105861567:android:5789705bb470e38a25e10a',
     messagingSenderId: '280105861567',
     projectId: 'stepandget',
+    databaseURL: 'https://stepandget-default-rtdb.firebaseio.com',
     storageBucket: 'stepandget.appspot.com',
   );
 
@@ -62,7 +68,21 @@ class DefaultFirebaseOptions {
     appId: '1:280105861567:ios:14ee15fbb4f7d40925e10a',
     messagingSenderId: '280105861567',
     projectId: 'stepandget',
+    databaseURL: 'https://stepandget-default-rtdb.firebaseio.com',
     storageBucket: 'stepandget.appspot.com',
+    androidClientId: '280105861567-3j8lj2vlsu1k6do5hk5tluj05senbcs7.apps.googleusercontent.com',
+    iosClientId: '280105861567-0l10eksu8145ha795u7rovuobgsh6502.apps.googleusercontent.com',
+    iosBundleId: 'com.example.stepNGet',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyBoJ_be71NqXGksjXNn4DKyco9Pvlosnfk',
+    appId: '1:280105861567:ios:14ee15fbb4f7d40925e10a',
+    messagingSenderId: '280105861567',
+    projectId: 'stepandget',
+    databaseURL: 'https://stepandget-default-rtdb.firebaseio.com',
+    storageBucket: 'stepandget.appspot.com',
+    androidClientId: '280105861567-3j8lj2vlsu1k6do5hk5tluj05senbcs7.apps.googleusercontent.com',
     iosClientId: '280105861567-0l10eksu8145ha795u7rovuobgsh6502.apps.googleusercontent.com',
     iosBundleId: 'com.example.stepNGet',
   );

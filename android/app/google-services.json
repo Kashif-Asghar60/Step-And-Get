@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "280105861567",
+    "firebase_url": "https://stepandget-default-rtdb.firebaseio.com",
     "project_id": "stepandget",
     "storage_bucket": "stepandget.appspot.com"
   },
@@ -20,7 +21,49 @@
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDqfWo8kDPejdEG9sar9a-CrsiRbczqN4E"
+          "current_key": "AIzaSyAnfZdB2NfwkjG7VSfdHaoapsHme7hnxcI"
+        },
+        {
+          "current_key": "AIzaSyDNCgD0Msi1KsicrArBvA46titTRRv4D94"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "280105861567-d2gndci65c0c2csp7tmqbal1cl3la0vt.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "280105861567-0l10eksu8145ha795u7rovuobgsh6502.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.stepNGet"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:280105861567:android:679db1c9a0d36d7e25e10a",
+        "android_client_info": {
+          "package_name": "com.example.stepandgetforadmin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "280105861567-d2gndci65c0c2csp7tmqbal1cl3la0vt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnfZdB2NfwkjG7VSfdHaoapsHme7hnxcI"
+        },
+        {
+          "current_key": "AIzaSyDNCgD0Msi1KsicrArBvA46titTRRv4D94"
         }
       ],
       "services": {

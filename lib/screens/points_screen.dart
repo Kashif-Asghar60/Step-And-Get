@@ -4,6 +4,11 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
+import '../provider/pointsprovider.dart';
+import '../provider/userauth.dart';
 
 class PointsScreen extends StatefulWidget {
   @override
@@ -15,6 +20,76 @@ class _PointsScreenState extends State<PointsScreen> {
   bool _isTimerRunning = false;
   Timer? _timer;
   int _timerDuration = 15 * 60; // 15 minutes in seconds
+  RewardedAd? _rewardedAd;
+  final adUnitId = Platform.isAndroid
+      ? 'ca-app-pub-3940256099942544/5224354917'
+      : 'ca-app-pub-3940256099942544/1712485313';
+  String? streamuserid;
+  Map<String, int> _dailyPoints = {};
+  int sumOfLastSixDays = 0;
+  Stream<int>? totalPointsStream; // Changed to nullable to set it later
+  List<DateTime> datesToDisplay = [];
+
+  List<Stream<int>> dailyPointsStreams = [];
+
+  @override
+  void initState() {
+    _createRewardedAd();
+    super.initState();
+    _fetchDailyPointsData();
+
+    // Fetch the current user ID from UserProvider
+    String? userId = context.read<UserProvider>().userId;
+    streamuserid = userId; // Set streamuserid here
+
+    // Initialize totalPointsStream if streamuserid is not null
+    if (streamuserid != null) {
+      totalPointsStream =
+          context.read<PointsProvider>().streamTotalPoints(streamuserid!);
+
+      // Call fetchPoints with the user ID
+      context.read<PointsProvider>().fetchTotalPoints(userId!);
+
+      // Create dailyPointsStreams for each date
+      for (int i = 0; i < 6; i++) {
+        DateTime date = DateTime.now().subtract(Duration(days: i));
+        dailyPointsStreams.add(
+            context.read<PointsProvider>().streamDailyPoints(streamuserid!, date));
+        datesToDisplay.add(date);
+      }
+    }
+  }
+
+  void _createRewardedAd() {
+    RewardedAd.load(
+      adUnitId: adUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) => setState(() => _rewardedAd = ad),
+        onAdFailedToLoad: (error) {
+          print('Rewarded ad failed to load: $error');
+        },
+      ),
+    );
+  }
+
+  Future<void> _fetchDailyPointsData() async {
+    String? userId = context.read<UserProvider>().userId;
+    for (int index = 0; index < 6; index++) {
+      DateTime currentDate = DateTime.now().subtract(Duration(days: index + 1));
+      String formattedDate = DateFormat('yyyy-MM-dd').format(currentDate);
+
+      // Fetch daily points for the current date and store them in _dailyPoints
+      int points = await context
+          .read<PointsProvider>()
+          .fetchDailyPoints(userId!, currentDate);
+
+      setState(() {
+        _dailyPoints[formattedDate] = points;
+        sumOfLastSixDays += points;
+      });
+    }
+  }
 
   void _startTimer() {
     const oneSec = Duration(seconds: 1);
@@ -40,43 +115,7 @@ class _PointsScreenState extends State<PointsScreen> {
       _timer = null;
     });
   }
-  //
-  // void _watchAds() {
-  //   setState(() {
-  //     _showRewardedAd();
-  //     _timerDuration = 15 * 60; // Reset the timer duration
-  //     _startTimer();
-  //   });
-  // }
 
-  RewardedAd? _rewardedAd;
-  final adUnitId = Platform.isAndroid
-      ? 'ca-app-pub-3940256099942544/5224354917'
-      : 'ca-app-pub-3940256099942544/1712485313';
-  @override
-  void initState() {
-    _createRewardedAd();
-    super.initState();
-  }
-
-//create Ad
-  void _createRewardedAd() {
-    RewardedAd.load(
-      adUnitId: adUnitId,
-      request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (ad) => setState(() => _rewardedAd = ad),
-        onAdFailedToLoad: (error) {
-          // setState(() {
-          //   _rewardedAd ??= null;
-          // });
-          print('Rewarded ad failed to load: $error');
-        },
-      ),
-    );
-  }
-
-  //shoew Ad
   void _showRewardedAd() {
     if (_rewardedAd != null) {
       _rewardedAd!.fullScreenContentCallback =
@@ -88,10 +127,15 @@ class _PointsScreenState extends State<PointsScreen> {
         _createRewardedAd();
       });
       _rewardedAd!.show(
-        onUserEarnedReward: (ad, reward) => setState(() {
-          _points += 20;
-        }),
-      );
+        onUserEarnedReward: (ad, reward) {
+          final pointsProvider = context.read<PointsProvider>();
+          String? userId = context.read<UserProvider>().userId;
+          pointsProvider.updatePoints(userId!, 40);
+
+          setState(() {
+            _points += 40;
+          });
+        });
       _rewardedAd = null;
     }
   }
@@ -115,7 +159,7 @@ class _PointsScreenState extends State<PointsScreen> {
         backgroundColor: Colors.red,
         automaticallyImplyLeading: false,
         elevation: 1,
-        title: Center(
+        title: const Center(
           child: Text(
             'Points',
             style: TextStyle(
@@ -125,34 +169,33 @@ class _PointsScreenState extends State<PointsScreen> {
         ),
       ),
       body: Column(
-        //  crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.grade,
-                color: Colors.orangeAccent,
-                size: 40,
-              ),
-              SizedBox(width: 5),
-              Text(
-                '$_points', // Replace with the actual points value
-                style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold),
-              ),
-            ],
+          StreamBuilder<int>(
+            stream: totalPointsStream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return CircularProgressIndicator();
+              } else if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
+              } else {
+                return Text(
+                  '${snapshot.data}',
+                  style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold),
+                );
+              }
+            },
           ),
           SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Text(
+              const Text(
                 'Last Week',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               Text(
-                '300',
+                '$sumOfLastSixDays',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
@@ -160,36 +203,42 @@ class _PointsScreenState extends State<PointsScreen> {
           SizedBox(height: 10),
           Expanded(
             child: ListView.builder(
-              itemCount: 6,
+              itemCount: datesToDisplay.length,
               itemBuilder: (context, index) {
-                DateTime currentDate =
-                    DateTime.now().subtract(Duration(days: index + 1));
-                String formattedDate = formatDate(
-                    currentDate); // Implement your own date formatting logic
+                DateTime date = datesToDisplay[index];
+                final pointsProvider = context.read<PointsProvider>();
+                // Replace with the user's ID
+                final dailyPointsStream = dailyPointsStreams[index];
 
-                return ListTile(
-                  title: Text(formattedDate),
-                  trailing: Text(
-                      '50'), // Replace with the actual points earned for the specific date
+                return StreamBuilder(
+                  stream: dailyPointsStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return ListTile(
+                        title: Text(DateFormat('yyyy-MM-dd').format(date)),
+                        trailing: CircularProgressIndicator(),
+                      );
+                    } else if (snapshot.hasError) {
+                      return ListTile(
+                        title: Text(DateFormat('yyyy-MM-dd').format(date)),
+                        trailing: Text('Error: ${snapshot.error}'),
+                      );
+                    } else {
+                      int points = snapshot.data ?? 0;
+                      print("object .. \n ll $snapshot");
+                      return ListTile(
+                        title: Text(DateFormat('yyyy-MM-dd').format(date)),
+                        trailing: Text('$points'),
+                      );
+                    }
+                  },
                 );
               },
             ),
           ),
-
-          // ElevatedButton(
-          //   style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-          //   onPressed: () {
-          //     //_points++;
-          //     _showRewardedAd();
-          //     // Handle the action for watching a rewarded ad
-          //     // This is for Watch Rewarded Ad x3 button
-          //   },
-          //   child: Text('Get 20 Points - Watch Ad'),
-          // ),
           _isTimerRunning
               ? ElevatedButton(
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(
@@ -203,7 +252,7 @@ class _PointsScreenState extends State<PointsScreen> {
                   onPressed: () {
                     setState(() {
                       _showRewardedAd();
-                      _timerDuration = 15 * 60; // Reset the timer duration
+                      _timerDuration = 15 * 60;
                       _startTimer();
                     });
                   },
