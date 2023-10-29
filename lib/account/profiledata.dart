@@ -62,29 +62,28 @@ class _ProfileDataState extends State<ProfileData> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.red,
+      ),
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Center(
-                child: SizedBox(
-                  width: 250,
-                  child: Image.asset(
-                    'assets/logo.png',
-                  ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Center(
+              child: SizedBox(
+                width: 250,
+                child: Image.asset(
+                  'assets/logo.png',
                 ),
               ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: _editMode ? _buildEditMode() : _buildViewMode(),
-              ),
-            ],
-          ),
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: _editMode ? _buildEditMode() : _buildViewMode(),
+            ),
+          ],
         ),
       ),
     );
@@ -122,10 +121,12 @@ class _ProfileDataState extends State<ProfileData> {
             labelText: 'Phone Number',
           ),
         ),
+        SizedBox(height: 10),
         if (selectedDate != null)
           Text(
             'Date of Birth: ${DateFormat.yMMMd().format(selectedDate!)}',
           ),
+        SizedBox(height: 10),
         ElevatedButton(
           onPressed: () {
             setState(() {
@@ -218,6 +219,7 @@ class _ProfileDataState extends State<ProfileData> {
               ),
             ),
           ),
+          SizedBox(height: 10),
           ElevatedButton(
             onPressed: () {
               _uploadData();

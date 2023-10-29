@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TermsConditions extends StatelessWidget {
   final String privacyPolicyLink = 'https://example.com/privacy_policy';
@@ -25,7 +26,7 @@ class TermsConditions extends StatelessWidget {
             SizedBox(height: 16),
             GestureDetector(
               onTap: () {
-                // Open privacy policy link
+                _launchURL();
               },
               child: Text(
                 'Read Terms and Conditions',
@@ -40,5 +41,14 @@ class TermsConditions extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  _launchURL() async {
+    const url = 'https://stepngetllc.com/terms-conditions/';
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
   final String privacyPolicyLink = 'https://example.com/privacy_policy';
@@ -32,7 +33,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             SizedBox(height: 16),
             GestureDetector(
               onTap: () {
-                // Open privacy policy link
+                _launchURL();
               },
               child: Text(
                 'Read our Privacy Policy',
@@ -47,5 +48,14 @@ class PrivacyPolicyScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  _launchURL() async {
+    const url = 'https://stepngetllc.com/privacy-policy/';
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
   }
 }

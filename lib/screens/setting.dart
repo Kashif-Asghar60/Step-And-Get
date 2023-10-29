@@ -113,7 +113,7 @@ class Settings extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: Icon(Icons.phone),
+            leading: Icon(Icons.email),
             title: Text('Contact Us'),
             trailing: Icon(Icons.arrow_forward_ios),
             onTap: () {

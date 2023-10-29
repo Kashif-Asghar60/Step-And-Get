@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
@@ -119,38 +121,37 @@ class _StepsScreenState extends State<StepsScreen> with WidgetsBindingObserver {
 
   bool pointsAddedToday = false;
 
-  void onStepCount(StepCount event) {
-    if (mounted) {
-      print("single step $event");
+void onStepCount(StepCount event) {
+  if (mounted) {
+    setState(() {
+      final stepsString = event.steps.toString(); // Convert to string
+      final stepsWithoutCommas = stepsString.replaceAll(',', ''); // Remove commas
+      _steps = stepsWithoutCommas;
+    });
 
-      // Check if the widget is still mounted before calling setState
-      setState(() {
-        _steps = event.steps.toString();
-      });
+    // Save the step count to SharedPreferences
+    saveStepCountToSharedPreferences(int.parse(_steps));
 
-      // Save the step count to SharedPreferences
-      saveStepCountToSharedPreferences(int.parse(_steps));
+    // Check if points have already been added today
+    if (pointsAddedToday) {
+      return; // Points have already been added, no need to continue
+    }
 
-      // Check if points have already been added today
-      if (pointsAddedToday) {
-        return; // Points have already been added, no need to continue
-      }
-
-      // Check if the current steps are greater than or equal to the target steps
-      if (int.parse(_steps) >= targetSteps) {
-        // Add 30 points to the user's total points
-        final userId = context.read<UserProvider>().userId;
-        if (userId != null) {
-          context
-              .read<PointsProvider>()
-              .updatePoints(userId, 70); // Adjust the points as needed
-          print("Adding 70 points.");
-          pointsAddedToday =
-              true; // Set the flag to prevent multiple additions in a day
-        }
+    // Check if the current steps are greater than or equal to the target steps
+    if (int.parse(_steps) >= targetSteps) {
+      // Add points to the user's total points
+      final userId = context.read<UserProvider>().userId;
+      if (userId != null) {
+        context
+            .read<PointsProvider>()
+            .updatePoints(userId, 70); // Adjust the points as needed
+        print("Adding 70 points.");
+        pointsAddedToday =
+            true; // Set the flag to prevent multiple additions in a day
       }
     }
   }
+}
 
 // Function to save the step count to SharedPreferences
   void saveStepCountToSharedPreferences(int steps) async {
@@ -452,37 +453,51 @@ class _StepsScreenState extends State<StepsScreen> with WidgetsBindingObserver {
     _updateUIFromTrackingState();
   }
 
-  void initPlatformState() async {
-    PermissionStatus status = await Permission.activityRecognition.request();
+void initPlatformState() async {
+  PermissionStatus status;
 
-    if (status.isGranted) {
-      // Initialize _stepCountStream only when starting tracking
-      _stepCountStream = Pedometer.stepCountStream;
-
-      _stepCountSubscription = _stepCountStream.listen((StepCount event) {
-        if (isTracking) {
-          onStepCount(event);
-        }
-      });
-
-      _stepCountSubscription!.onError(onStepCountError);
-
-      // Initialize _pedestrianStatusStream only when starting tracking
-      _pedestrianStatusStream = Pedometer.pedestrianStatusStream;
-
-      _pedestrianStatusSubscription =
-          _pedestrianStatusStream.listen((PedestrianStatus event) {
-        if (isTracking) {
-          onPedestrianStatusChanged(event);
-        }
-      });
-
-      _pedestrianStatusSubscription!.onError(onPedestrianStatusError);
-    } else {
-      setState(() {
-        _status = 'Permission denied';
-        _steps = 'Permission denied';
-      });
-    }
+  // Check the platform and request the corresponding permission
+  if (Platform.isIOS) {
+    status = await Permission.sensors.request();
+  } else if (Platform.isAndroid) {
+    status = await Permission.activityRecognition.request();
+  } else {
+    // Handle other platforms if needed
+    return;
   }
+
+  if (status.isGranted) {
+    print('Permission for step count data is granted.');
+
+    // Initialize _stepCountStream only when starting tracking
+    _stepCountStream = Pedometer.stepCountStream;
+
+    _stepCountSubscription = _stepCountStream.listen((StepCount event) {
+      if (isTracking) {
+        onStepCount(event);
+      }
+    });
+
+    _stepCountSubscription!.onError(onStepCountError);
+
+    // Initialize _pedestrianStatusStream only when starting tracking
+    _pedestrianStatusStream = Pedometer.pedestrianStatusStream;
+
+    _pedestrianStatusSubscription =
+        _pedestrianStatusStream.listen((PedestrianStatus event) {
+      if (isTracking) {
+        onPedestrianStatusChanged(event);
+      }
+    });
+
+    _pedestrianStatusSubscription!.onError(onPedestrianStatusError);
+  } else {
+    setState(() {
+      _status = 'Permission denied';
+      _steps = 'Permission denied';
+    });
+    print('Permission for step count data is denied.');
+  }
+}
+
 }
